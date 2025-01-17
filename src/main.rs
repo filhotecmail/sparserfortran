@@ -14,7 +14,7 @@ struct AsciiArt {
 }
 
 impl AsciiArt {
-    fn new(program_name: &str, build_type: &str, version: &str) -> Self {
+    fn new(program_name: &str, buildtype: &str, version: &str) -> Self {
         let art = format!(
             "
 +---------------------------------------------------------------------------------------------+  
@@ -37,7 +37,7 @@ impl AsciiArt {
 |  Licença Pública Geral GNU para mais detalhes.                                              |
 +---------------------------------------------------------------------------------------------+  
 ",
-            program_name, version, build_type, env::var("PROFILE").unwrap_or_else(|_| "Desconhecido".to_string())
+            program_name, version, buildtype, env::var("PROFILE").unwrap_or_else(|_| "Desconhecido".to_string())
         );
 
         AsciiArt { art }
@@ -84,36 +84,33 @@ impl FacadeApp {
         app.print_file_info();
         app
     }
-
+    
     fn extract_module(file_path: &str, function_name: &str) -> io::Result<()> {
         let content = fs::read_to_string(file_path)?;
-        let current_time = Local::now().format("%Y-%m-%d-%H%M%S").to_string();
+        let c_time = Local::now().format("%Y-%m-%d-%H%M%S").to_string();
         let backup_dir = "bkp";
+        
         fs::create_dir_all(backup_dir)?;
-        let backup_file_name = format!("{}/{}-{}.f90", backup_dir, current_time, function_name);
-        let backup_file_path = Path::new(&backup_file_name);
+        let bkpfl_name = format!("{}/{}-{}.f90", backup_dir, c_time, function_name);
+        let bkpfl_path = Path::new(&bkpfl_name);
     
         let re = Regex::new(&format!(r"\b{}\b", function_name))
             .map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, err))?;
     
         let mut inside_module = false;
         let mut module_content = String::new();
-        let mut module_start_line = 0;
-    
-        // Armazenando o conteúdo do módulo
         let mut module_code = String::new();
     
-        for (line_number, line) in content.lines().enumerate() {
+        for (_, line) in content.lines().enumerate() {
             if line.contains("module ") && !inside_module {
                 inside_module = true;
-                module_start_line = line_number + 1;
             }
     
             if inside_module {
                 module_content.push_str(line);
-                module_content.push('\n'); // Mantém a quebra de linha
-                module_code.push_str(line); // Mantém a quebra de linha ao escrever no backup
-                module_code.push('\n'); // Garante que a quebra de linha seja adicionada ao backup
+                module_content.push('\n');
+                module_code.push_str(line);
+                module_code.push('\n'); 
     
                 if line.contains("end module") {
                     inside_module = false;
@@ -121,19 +118,18 @@ impl FacadeApp {
             }
         }
     
-        if module_content.contains(&format!("module {}", function_name)) {
-            // Abrir arquivo de backup para escrita
+        if module_content.contains(&format!("module {}", function_name)) {          
             let mut backup_file = OpenOptions::new()
                 .create(true)
                 .write(true)
                 .truncate(true) 
-                .open(backup_file_path)?;    
+                .open(bkpfl_path)?;
       
             backup_file.write_all(module_code.as_bytes())?;
     
-            let updated_content = re.replace_all(&content, &format!(
+            re.replace_all(&content, &format!(
                 " ! Code removed by sparseFortran application on date {}",
-                current_time
+                c_time
             ));
     
             Self::confirm_removal(file_path, &content, &module_content)
@@ -142,6 +138,7 @@ impl FacadeApp {
             Ok(())
         }
     }
+    
 
     fn extract_function(file_path: &str, function_name: &str) -> io::Result<()> {
         let content = fs::read_to_string(file_path)?;
@@ -181,21 +178,21 @@ impl FacadeApp {
                 "y" => {
                      
                     let content = fs::read_to_string(file_path)?;    
-                    let current_time = Local::now().format("%Y-%m-%d as %H:%M:%S").to_string();
+                    let c_time = Local::now().format("%Y-%m-%d as %H:%M:%S").to_string();
 
                     let backup_dir = "bkp";
                     fs::create_dir_all(backup_dir)?;
-                    let backup_file_name = format!("{}/{}-{}.f90", backup_dir, current_time, func_name);
-                    let backup_file_path = Path::new(&backup_file_name);
+                    let bkpfl_name = format!("{}/{}-{}.f90", backup_dir, c_time, func_name);
+                    let bkpfl_path = Path::new(&bkpfl_name);
 
                     for sub_match in re.find_iter(&content) {
                         let matched_content = &content[sub_match.start()..sub_match.end()]; 
-                        fs::write(backup_file_path, matched_content.as_bytes())?;                    
+                        fs::write(bkpfl_path, matched_content.as_bytes())?;                    
                     }
 
                     let updated_content = re.replace_all(&content, &format!(
                         " ! Code removed by sparseFortran application on date {}",
-                        current_time
+                        c_time
                     ));                 
                     fs::write(file_path, updated_content.as_bytes())?;
                     println!("\x1b[32mSub-rotina '{}' removida com sucesso!\x1b[0m", func_name);
@@ -203,30 +200,30 @@ impl FacadeApp {
                 "all" => {
 
                     let content = fs::read_to_string(file_path)?;
-                    let current_time = Local::now().format("%Y-%m-%d as %H:%M:%S").to_string();
+                    let c_time = Local::now().format("%Y-%m-%d as %H:%M:%S").to_string();
                     
                     let backup_dir = "bkp";
                     fs::create_dir_all(backup_dir)?;
-                    let backup_file_name = format!("{}/{}-{}.f90", backup_dir, current_time, func_name);
-                    let backup_file_path = Path::new(&backup_file_name);
+                    let bkpfl_name = format!("{}/{}-{}.f90", backup_dir, c_time, func_name);
+                    let bkpfl_path = Path::new(&bkpfl_name);
 
                     for sub_match in re.find_iter(&content) {
                         let matched_content = &content[sub_match.start()..sub_match.end()]; 
-                        fs::write(backup_file_path, matched_content.as_bytes())?;                    
+                        fs::write(bkpfl_path, matched_content.as_bytes())?;                    
                     }
                     
                     let updated_content = re.replace_all(&content, &format!(
                         " ! Code removed by sparseFortran application on date {}",
-                        current_time
+                        c_time
                     )); 
 
                     let call_pat = format!(r"\bcall\s+{}\b", func_name);
                     let re_call = Regex::new(&call_pat).unwrap();
-                    let final_content = re_call.replace_all(&updated_content,&format!(
+                    let fim_content = re_call.replace_all(&updated_content,&format!(
                         " ! Code removed by sparseFortran application on date {}\n",
-                        current_time
+                        c_time
                     )); 
-                    fs::write(file_path, final_content.as_bytes())?;
+                    fs::write(file_path, fim_content.as_bytes())?;
                     println!("\x1b[32mSub-rotina '{}' e chamadas removidas com sucesso!\x1b[0m", func_name);
 
                 },
@@ -290,8 +287,8 @@ impl FacadeApp {
     }
 
     fn show_ascii_art(&self) {
-        let build_type = env::var("PROFILE").unwrap_or_else(|_| "Release".to_string());
-        let art = AsciiArt::new(&self.program_name, &build_type, &self.version);
+        let buildtype = env::var("PROFILE").unwrap_or_else(|_| "Release".to_string());
+        let art = AsciiArt::new(&self.program_name, &buildtype, &self.version);
 
         let mut color = StandardStream::stdout(ColorChoice::Always);
         color.set_color(ColorSpec::new().set_fg(Some(Color::Green))).unwrap();  
@@ -301,7 +298,7 @@ impl FacadeApp {
     }
 
     fn print_file_info(&self) {
-        let metadata = match fs::metadata(&self.args.file) {
+        let data = match fs::metadata(&self.args.file) {
             Ok(meta) => meta,
             Err(_) => {
                 eprintln!("\x1b[31m[ error ] Erro ao acessar o arquivo '{}'\x1b[0m", self.args.file);
@@ -311,7 +308,7 @@ impl FacadeApp {
     
         let file_name = self.args.file.split('/').last().unwrap_or(&self.args.file);
         let extension = file_name.split('.').last().unwrap_or("Desconhecido");
-        let file_size = metadata.len();
+        let file_size = data.len();
         
         let lines = match fs::read_to_string(&self.args.file) {
             Ok(content) => content.lines().count(),
