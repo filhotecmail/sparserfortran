@@ -37,7 +37,7 @@ impl AsciiArt {
 |  Licença Pública Geral GNU para mais detalhes.                                              |
 +---------------------------------------------------------------------------------------------+  
 ",
-            program_name, version, buildtype, env::var("PROFILE").unwrap_or_else(|_| "Desconhecido".to_string())
+            program_name, version, buildtype, env::var("PROFILE").unwrap_or_else(|_| "Release".to_string())
         );
 
         AsciiArt { art }
@@ -51,15 +51,16 @@ impl AsciiArt {
 #[derive(FromArgs)]
 /// Estrutura para lidar com os argumentos da linha de comando.
 struct Args {
-    #[argh(option, description = "método a ser usado")]
+    #[argh(option, description = "method to be used")]
     #[allow(dead_code)]
     ex: String,
-
-    #[argh(option, description = "nome da função ou sub-rotina a ser extraída")]
+    
+    #[argh(option, description = "name of the function or subroutine to be extracted")]
     f: String,
-
-    #[argh(positional, description = "caminho para o arquivo Fortran")]
+    
+    #[argh(positional, description = "path to the Fortran file")]
     file: String,
+    
 }
 
 struct FacadeApp {
@@ -134,7 +135,8 @@ impl FacadeApp {
     
             Self::confirm_removal(file_path, &content, &module_content)
         } else {
-            println!("Módulo '{}' não encontrado!", function_name);
+            println!("Module '{}' not found!", function_name);
+
             Ok(())
         }
     }
@@ -146,13 +148,13 @@ impl FacadeApp {
         let re = Regex::new(&function_pattern).unwrap();
 
         if let Some(function_match) = re.find(&content) {
-            println!("\nFunção '{}' encontrada!", function_name);
-            println!("Linha: {}", content[..function_match.start()].lines().count() + 1);
-            println!("Conteúdo completo da função:\n{}", &content[function_match.start()..function_match.end()]);
+            println!("\nFunction '{}' found!", function_name);
+            println!("Line: {}", content[..function_match.start()].lines().count() + 1);
+            println!("Full content of the function:\n{}", &content[function_match.start()..function_match.end()]);
 
             Self::confirm_removal(file_path, &content, &content[function_match.start()..function_match.end()])
         } else {
-            println!("Função '{}' não encontrada!", function_name);
+            println!("Function '{}' not found!", function_name);
             Ok(())
         }
     }
@@ -240,8 +242,9 @@ impl FacadeApp {
     }   
 
     fn confirm_removal(file_path: &str, content: &str, target_content: &str) -> io::Result<()> {
-        println!("\nVocê deseja remover o conteúdo? [Y] para remover, [n] para cancelar");
-    
+
+        println!("\nDo you want to remove the content? [Y] to remove, [n] to cancel");   
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?; 
         let input = input.trim().to_lowercase(); 
@@ -250,11 +253,13 @@ impl FacadeApp {
             "y" => {
                 let updated_content = content.replace(target_content, ""); 
                 fs::write(file_path, updated_content.as_bytes())?;
-                println!("\x1b[32mConteúdo removido com sucesso!\x1b[0m");
+                println!("\x1b[32mContent successfully removed!\x1b[0m");
+
 
             },
             _ => {
-                println!("Operação cancelada.");
+                println!("Operation cancelled.");
+
             }
         }
     
@@ -278,8 +283,9 @@ impl FacadeApp {
                 }
             }
             None => {
-                eprintln!("\x1b[31m[error] Método, função ou subrotina '{}' não encontrado na unidade '{}'\x1b[0m", self.args.f, self.args.file);
-                return Err(io::Error::new(io::ErrorKind::NotFound, "Elemento não encontrado"));
+                eprintln!("\x1b[31m[error] Method, function, or subroutine '{}' not found in the file '{}'\x1b[0m", self.args.f, self.args.file);
+                return Err(io::Error::new(io::ErrorKind::NotFound, "Element not found"));
+
             }
         }
     
@@ -301,7 +307,7 @@ impl FacadeApp {
         let data = match fs::metadata(&self.args.file) {
             Ok(meta) => meta,
             Err(_) => {
-                eprintln!("\x1b[31m[ error ] Erro ao acessar o arquivo '{}'\x1b[0m", self.args.file);
+                eprintln!("\x1b[31m[ error ] Error accessing the file '{}'\x1b[0m", self.args.file);
                 return;
             }
         };
@@ -313,18 +319,18 @@ impl FacadeApp {
         let lines = match fs::read_to_string(&self.args.file) {
             Ok(content) => content.lines().count(),
             Err(_) => {
-                eprintln!("\x1b[31m[ error ]] Erro ao ler o conteúdo do arquivo '{}'\x1b[0m", self.args.file);
-                return;
+                eprintln!("\x1b[31m[ error ] Error reading the content of the file '{}'\x1b[0m", self.args.file);
+                return; 
             }
         };
     
-        println!("\nNome do arquivo: {}", file_name);
-        println!("Caminho do Arquivo: {}", self.args.file);
-        println!("Extensão do arquivo: {}", extension);
-        println!("Tamanho do arquivo: {} bytes", file_size);
-        println!("Número de linhas: {}\n", lines);
-
+        println!("\nFile Name: {}", file_name);
+        println!("File Path: {}", self.args.file);
+        println!("File Extension: {}", extension);
+        println!("File Size: {} bytes", file_size);
+        println!("Number of Lines: {}\n", lines);
     }
+    
     
 }
 
