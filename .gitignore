@@ -1,4 +1,4 @@
-# Rust configuration
+# Rust target directory
 target/*
 !target/debug/
 !target/debug/**
@@ -19,6 +19,11 @@ target/release/.deps/
 target/release/.deps/**
 target/release/.incremental/
 target/release/.incremental/**
+
+# Build directory - allow only .d and binaries
+build/*
+!build/*.d
+!build/*.bin
 
 # Other common files to ignore
 *.rs.bk
