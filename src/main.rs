@@ -10,6 +10,25 @@ use regex::Regex;
 use chrono::Local;
 
 
+/// Macro para formatar mensagens, substituindo os placeholders `{0}`, `{1}`, etc., pelos valores fornecidos.
+///
+/// # Exemplo:
+/// ```rust
+/// let formatted_message = format_message!(
+///     "Hello, {0}! Welcome to {1}. You have {2} new messages.",
+///     "Alice", 
+///     "Rustland", 
+///     5
+/// );
+/// assert_eq!(formatted_message, "Hello, Alice! Welcome to Rustland. You have 5 new messages.");
+/// ```
+///
+/// # Parâmetros:
+/// - `$message`: A mensagem que contém os placeholders `{0}`, `{1}`, etc., que serão substituídos.
+/// - `$($val:expr),*`: Uma quantidade variável de valores que substituirão os placeholders.
+///
+/// # Retorna:
+/// Retorna a string formatada com os valores substituídos.
 macro_rules! format_message {
     ($message:expr, $($val:expr),*) => {{
         let mut message = $message.to_string();  
@@ -78,14 +97,36 @@ struct Args {
 struct Messages;
 
 impl Messages {
-    const M001_CONFIRM_REMOVE_MSG: &str                 = "\x1b[32m\nDo you want to remove the content? [Y] to remove, [n] to cancel\x1b[0m";
-    const M002_SUCCESSFUL_REMOVAL_COLORED: &'static str = "\x1b[32m[success] Content successfully removed!\x1b[0m";
-    const M003_CODEREMOVED_MSG: &'static str            = "\x1b[32m[success] ! Code removed by sparseFortran application on date {0}\x1b[0m";
-    const M004_FUNCTION_FOUND: &'static str             = "\x1b[32m[success] Function '{0}' found in the file '{1}'\x1b[0m";
+    const M001_CONFIRM_REMOVE_MSG: &str                    = "\x1b[32m\nDo you want to remove the content? [Y] to remove, [n] to cancel\x1b[0m";
+    const M002_SUCCESSFUL_REMOVAL_COLORED: &'static str    = "\x1b[32m[success] Content successfully removed!\x1b[0m";
+    const M003_CODEREMOVED_MSG: &'static str               = " ! Code removed by sparseFortran application on date {0} ";
+    const M004_FUNCTION_FOUND: &'static str                = "\x1b[32m[success] Function '{0}' found in the file '{1}'\x1b[0m";
+    const M005_SUBROUTINE_REMOVED_SUCESS : &'static str    = "\x1b[32m[success] Subroutine {0} successfully removed!\x1b[0m";
     
     const E001_METHODFUNCIONORSUBR_NOTFOUND : &'static str = "\x1b[31m[error] Method, function, or subroutine '{0}' not found in the file '{1}'\x1b[0m";
     const E002_MODULE_NOTFOUND : &'static str              = "\x1b[31m[error] Module '{0}' not found in the file '{1}'\x1b[0m";
-    const E003_FUNCTION_NOTFOUND: &'static str             = "\x1b[31m[error] Function '{0}' not found in the file '{1}'\x1b[0m"; 
+    const E003_FUNCTION_NOTFOUND: &'static str             = "\x1b[31m[error] Function '{0}' not found in the file '{1}'\x1b[0m";
+    pub const E004_SUBROUTINE_NOTFOUND: &str               = "\x1b[31m[error] Subroutine '{0}' not found in the file '{1}'\x1b[0m"; 
+
+    /// Formata uma mensagem substituindo os placeholders `{0}`, `{1}`, etc., pelos valores fornecidos.
+    /// Criei isso para me facilitar a usar como chamada estatica que vai usar a macro 
+    /// 
+    /// # Exemplo:
+    /// ```rust
+    /// let formatted_message = format_message!(
+    ///     Messages::M004_FUNCTION_FOUND,
+    ///     "my_function",
+    ///     "my_file.f90"
+    /// );
+    /// assert_eq!(formatted_message, "\x1b[32m[success] Function 'my_function' found in the file 'my_file.f90'\x1b[0m");
+    /// ```
+    pub fn format_message(message: &str, args: &[&str]) -> String {
+        let mut formatted_message = message.to_string();
+        for (i, arg) in args.iter().enumerate() {
+            formatted_message = formatted_message.replace(&format!("{{{}}}", i), arg);
+        }
+        formatted_message
+    }
 }
 
 struct FacadeApp {
@@ -218,12 +259,10 @@ impl FacadeApp {
                         fs::write(bkpfl_path, matched_content.as_bytes())?;                    
                     }
 
-                    let updated_content = re.replace_all(&content, &format!(
-                        " ! Code removed by sparseFortran application on date {}",
-                        c_time
-                    ));                 
-                    fs::write(file_path, updated_content.as_bytes())?;
-                    println!("\x1b[32mSub-rotina '{}' removida com sucesso!\x1b[0m", func_name);
+                    let updated_content = re.replace_all(&content, Messages::format_message(  &Messages::M003_CODEREMOVED_MSG,&[&c_time] ));
+
+                    fs::write(file_path, updated_content.as_bytes())?;                  
+                    eprintln!("{}", Messages::format_message(Messages::M005_SUBROUTINE_REMOVED_SUCESS, &[func_name]));
                 },
                 "all" => {
 
@@ -247,12 +286,14 @@ impl FacadeApp {
 
                     let call_pat = format!(r"\bcall\s+{}\b", func_name);
                     let re_call = Regex::new(&call_pat).unwrap();
-                    let fim_content = re_call.replace_all(&updated_content,&format!(
-                        " ! Code removed by sparseFortran application on date {}\n",
+                    
+                    let fim_content = re_call.replace_all(&updated_content, &format_message!(
+                        &Messages::M003_CODEREMOVED_MSG,
                         c_time
-                    )); 
+                    ));
+                                         
                     fs::write(file_path, fim_content.as_bytes())?;
-                    println!("\x1b[32mSub-rotina '{}' e chamadas removidas com sucesso!\x1b[0m", func_name);
+                    eprintln!("{}", Messages::format_message(Messages::M002_SUCCESSFUL_REMOVAL_COLORED, &[]));
 
                 },
                 _ => {
@@ -260,7 +301,7 @@ impl FacadeApp {
                 }
             }
         } else {
-            println!("\x1b[31m[ error ] Sub-rotina '{}' não encontrada!\x1b[0m", func_name);
+            eprintln!("{}", Messages::format_message(Messages::E004_SUBROUTINE_NOTFOUND, &[func_name, file_path]));
 
         }
     
