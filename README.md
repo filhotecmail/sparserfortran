@@ -1,29 +1,29 @@
 # SparserFortran
 
-**SparserFortran** é um programa desenvolvido para extrair métodos de arquivos Fortran e permitir sua remoção ou modificação. Ele facilita o processamento de código Fortran, extraindo sub-rotinas e módulos, e oferece uma maneira eficiente de modificar o código, visando desempenho e clareza.
+**SparserFortran** is a program designed to extract methods from Fortran files and allow their removal or modification. It facilitates the processing of Fortran code, extracting subroutines and modules, and offers an efficient way to modify the code for performance and clarity.
 
-## Funcionalidades
+## Features
 
-- **Extração de Módulos:** Permite extrair módulos de arquivos Fortran.
-- **Remoção de Funções e Sub-rotinas:** Possui a capacidade de remover funções e sub-rotinas de arquivos Fortran.
-- **Backup e Registro de Modificações:** Realiza backups antes de remover qualquer código e adiciona um comentário no código removido com a data e hora.
-- **Interface de Linha de Comando:** Controlado via linha de comando, permitindo automação e fácil integração.
+- **Module Extraction:** Allows the extraction of modules from Fortran files.
+- **Function and Subroutine Removal:** Capable of removing functions and subroutines from Fortran files.
+- **Backup and Modification Logging:** Creates backups before removing any code and adds a comment to the removed code with the timestamp.
+- **Command-Line Interface:** Controlled via the command line, enabling automation and easy integration.
 
-## Tecnologias
+## Technologies
 
-- **Rust** - O programa foi desenvolvido em Rust, garantindo performance e segurança.
-- **Regex** - Usado para buscar e manipular os conteúdos dos arquivos Fortran.
-- **Chrono** - Para manipulação de datas e horários, usado na criação de backups e no registro das alterações.
+- **Rust** - The program is developed in Rust, ensuring performance and safety.
+- **Regex** - Used for searching and manipulating the contents of Fortran files.
+- **Chrono** - For handling dates and times, used in backup creation and modification logging.
 
-## Instalação
+## Installation
 
-### Dependências
+### Dependencies
 
-1. **Rust:** Este projeto foi desenvolvido em Rust. Para instalar o Rust, siga as instruções em [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install).
+1. **Rust:** This project is developed in Rust. To install Rust, follow the instructions at [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install).
 
-### Compilação
+### Building the Project
 
-Para compilar o projeto, use o cargo (gerenciador de pacotes do Rust) na raiz do projeto:
+To build the project, use the `cargo` (Rust package manager) in the root directory of the project:
 
 ```bash
 cargo build --release
