@@ -23,6 +23,10 @@ target/debug/.deps/
 target/debug/.deps/**
 target/release/.deps/
 target/release/.deps/**
+target/debug/.build/
+target/debug/.build/**
+target/release/.build/
+target/release/.build/**
 
 # Build directory - allow only .d and binaries
 build/*
