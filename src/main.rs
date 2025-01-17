@@ -9,6 +9,18 @@ use std::time::Duration;
 use regex::Regex;
 use chrono::Local;
 
+
+macro_rules! format_message {
+    ($message:expr, $($val:expr),*) => {{
+        let mut message = $message.to_string();  
+        let values = vec![$(String::from($val)),*];  
+        for (i, value) in values.iter().enumerate() {
+            message = message.replace(&format!("{{{}}}", i), &value); 
+        }
+        message  
+    }};
+}  
+
 struct AsciiArt {
     art: String,
 }
@@ -61,6 +73,19 @@ struct Args {
     #[argh(positional, description = "path to the Fortran file")]
     file: String,
     
+}
+
+struct Messages;
+
+impl Messages {
+    const M001_CONFIRM_REMOVE_MSG: &str                 = "\x1b[32m\nDo you want to remove the content? [Y] to remove, [n] to cancel\x1b[0m";
+    const M002_SUCCESSFUL_REMOVAL_COLORED: &'static str = "\x1b[32m[success] Content successfully removed!\x1b[0m";
+    const M003_CODEREMOVED_MSG: &'static str            = "\x1b[32m[success] ! Code removed by sparseFortran application on date {0}\x1b[0m";
+    const M004_FUNCTION_FOUND: &'static str             = "\x1b[32m[success] Function '{0}' found in the file '{1}'\x1b[0m";
+    
+    const E001_METHODFUNCIONORSUBR_NOTFOUND : &'static str = "\x1b[31m[error] Method, function, or subroutine '{0}' not found in the file '{1}'\x1b[0m";
+    const E002_MODULE_NOTFOUND : &'static str              = "\x1b[31m[error] Module '{0}' not found in the file '{1}'\x1b[0m";
+    const E003_FUNCTION_NOTFOUND: &'static str             = "\x1b[31m[error] Function '{0}' not found in the file '{1}'\x1b[0m"; 
 }
 
 struct FacadeApp {
@@ -128,33 +153,34 @@ impl FacadeApp {
       
             backup_file.write_all(module_code.as_bytes())?;
     
-            re.replace_all(&content, &format!(
-                " ! Code removed by sparseFortran application on date {}",
+            re.replace_all(&content, &format_message!(
+                &Messages::M003_CODEREMOVED_MSG,
                 c_time
             ));
     
             Self::confirm_removal(file_path, &content, &module_content)
         } else {
-            println!("Module '{}' not found!", function_name);
+            eprintln!("{}", format_message!( Messages::E002_MODULE_NOTFOUND, function_name,file_path));
 
             Ok(())
         }
     }
     
-
     fn extract_function(file_path: &str, function_name: &str) -> io::Result<()> {
         let content = fs::read_to_string(file_path)?;
         let function_pattern = format!(r"function {}\([^\)]*\)[\s\S]*?end function {}", function_name, function_name);
         let re = Regex::new(&function_pattern).unwrap();
 
         if let Some(function_match) = re.find(&content) {
-            println!("\nFunction '{}' found!", function_name);
+
+            eprintln!("{}", format_message!( Messages::M004_FUNCTION_FOUND, function_name,file_path));
+
             println!("Line: {}", content[..function_match.start()].lines().count() + 1);
             println!("Full content of the function:\n{}", &content[function_match.start()..function_match.end()]);
 
             Self::confirm_removal(file_path, &content, &content[function_match.start()..function_match.end()])
         } else {
-            println!("Function '{}' not found!", function_name);
+            eprintln!("{}", format_message!( Messages::E003_FUNCTION_NOTFOUND, function_name,file_path));
             Ok(())
         }
     }
@@ -243,7 +269,7 @@ impl FacadeApp {
 
     fn confirm_removal(file_path: &str, content: &str, target_content: &str) -> io::Result<()> {
 
-        println!("\nDo you want to remove the content? [Y] to remove, [n] to cancel");   
+        println!("{}",Messages::M001_CONFIRM_REMOVE_MSG);   
 
         let mut input = String::new();
         io::stdin().read_line(&mut input)?; 
@@ -253,7 +279,7 @@ impl FacadeApp {
             "y" => {
                 let updated_content = content.replace(target_content, ""); 
                 fs::write(file_path, updated_content.as_bytes())?;
-                println!("\x1b[32mContent successfully removed!\x1b[0m");
+                println!("{}",Messages::M002_SUCCESSFUL_REMOVAL_COLORED);
 
 
             },
@@ -283,7 +309,7 @@ impl FacadeApp {
                 }
             }
             None => {
-                eprintln!("\x1b[31m[error] Method, function, or subroutine '{}' not found in the file '{}'\x1b[0m", self.args.f, self.args.file);
+                eprintln!( "{}",  format_message!(  Messages::E001_METHODFUNCIONORSUBR_NOTFOUND,  self.args.f, self.args.file ) );
                 return Err(io::Error::new(io::ErrorKind::NotFound, "Element not found"));
 
             }
@@ -329,8 +355,7 @@ impl FacadeApp {
         println!("File Extension: {}", extension);
         println!("File Size: {} bytes", file_size);
         println!("Number of Lines: {}\n", lines);
-    }
-    
+    }    
     
 }
 
