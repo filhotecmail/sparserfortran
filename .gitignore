@@ -19,6 +19,10 @@ target/release/.deps/
 target/release/.deps/**
 target/release/.incremental/
 target/release/.incremental/**
+target/debug/.deps/
+target/debug/.deps/**
+target/release/.deps/
+target/release/.deps/**
 
 # Build directory - allow only .d and binaries
 build/*
