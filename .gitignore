@@ -1,1 +1,19 @@
-/target
+# Rust configuration
+target/*
+!target/debug/
+!target/debug/**
+!target/release/
+!target/release/**
+
+# Other common files to ignore
+*.rs.bk
+Cargo.lock
+*.log
+*.tmp
+*.swp
+*.bak
+.DS_Store
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
