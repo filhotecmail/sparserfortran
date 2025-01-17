@@ -5,6 +5,21 @@ target/*
 !target/release/
 !target/release/**
 
+# Exclude specific directories in debug and release
+target/debug/.fingerprint/
+target/debug/.fingerprint/**
+target/debug/.deps/
+target/debug/.deps/**
+target/debug/.incremental/
+target/debug/.incremental/**
+
+target/release/.fingerprint/
+target/release/.fingerprint/**
+target/release/.deps/
+target/release/.deps/**
+target/release/.incremental/
+target/release/.incremental/**
+
 # Other common files to ignore
 *.rs.bk
 Cargo.lock
